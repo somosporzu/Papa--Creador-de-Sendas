@@ -34,7 +34,14 @@ import {
   Book,
   Star,
   Package,
-  Coins
+  Coins,
+  Trophy,
+  BookOpen,
+  Heart,
+  Crown,
+  Target,
+  Compass,
+  ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -100,10 +107,16 @@ const INITIAL_SENDA: Senda = {
   abilities: INITIAL_ABILITIES
 };
 
+import { ModuleSelector } from './components/ModuleSelector';
+
 export default function App() {
   const [senda, setSenda] = useState<Senda>(INITIAL_SENDA);
 
   const [expandedAbility, setExpandedAbility] = useState<string | null>('init');
+  const [activeTab, setActiveTab] = useState<'estructura' | 'identidad' | 'habilidades' | 'equipo' | 'resumen'>('estructura');
+  const [moduleSelectorAbilityId, setModuleSelectorAbilityId] = useState<string | null>(null);
+  const [moduleSelectorCategory, setModuleSelectorCategory] = useState<string>('Todos');
+  const [moduleSearchQuery, setModuleSearchQuery] = useState('');
 
   // Calculations
   const energyCost = useMemo(() => {
@@ -414,135 +427,88 @@ export default function App() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Structural Decisions & Validation */}
-          <div className="space-y-6">
-            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
-                <Book className="w-5 h-5 text-[#d4af37]" /> Fantasía Central
-              </h2>
-              <textarea 
-                value={senda.fantasy}
-                onChange={e => setSenda(prev => ({ ...prev, fantasy: e.target.value }))}
-                placeholder="Define la idea central del personaje en una sola frase..."
-                className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 focus:border-[#d4af37] outline-none text-sm italic h-24 resize-none"
-              />
-            </section>
+        {/* Tab Navigation */}
+        <nav className="flex flex-wrap gap-2 mb-6 border-b-2 border-[#5d3a1a] pb-2">
+          {[
+            { id: 'identidad', label: 'Identidad', icon: Book },
+            { id: 'estructura', label: 'Estructura', icon: Shield },
+            { id: 'habilidades', label: 'Habilidades', icon: Zap },
+            { id: 'equipo', label: 'Equipo', icon: Package },
+            { id: 'resumen', label: 'Resumen', icon: Info },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-all duration-200 font-bold text-sm ${
+                activeTab === tab.id 
+                  ? 'bg-[#5d3a1a] text-[#d4af37] shadow-[0_-4px_10px_rgba(0,0,0,0.3)]' 
+                  : 'bg-[#3e2723]/50 text-[#a0785a] hover:bg-[#3e2723] hover:text-[#f4e4bc]'
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
-            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
+        <div className="space-y-8">
+          {activeTab === 'identidad' && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            >
+              <div className="space-y-6">
+                <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
                 <Star className="w-5 h-5 text-[#d4af37]" /> Conceptos de la Senda
               </h2>
               <div className="space-y-4">
-                {senda.concepts.map((concept, idx) => {
-                  const options = PREDEFINED_CONCEPTS[concept.category] || [];
-                  const isPredefined = options.includes(concept.name);
-                  const showCustomInput = concept.name !== '' && !isPredefined;
-
-                  return (
-                    <div key={idx} className="p-3 bg-[#2c1810]/50 rounded border border-[#5d3a1a]">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs uppercase font-bold text-[#a0785a]">
-                          {concept.isPrincipal ? 'Concepto Principal' : `Concepto Secundario ${idx}`}
-                        </span>
-                        <select 
-                          value={concept.category}
-                          onChange={e => updateConcept(idx, { category: e.target.value as ConceptCategory, name: '' })}
-                          className="bg-transparent text-xs text-[#d4af37] border-none focus:ring-0 cursor-pointer"
-                        >
-                          <option value="Marciales">Marciales</option>
-                          <option value="Sociales">Sociales</option>
-                          <option value="Productivos">Productivos</option>
-                          <option value="Espirituales">Espirituales</option>
-                          <option value="Intelectuales">Intelectuales</option>
-                        </select>
-                      </div>
-                      
-                      <select
-                        value={isPredefined ? concept.name : (concept.name === '' ? '' : 'custom')}
-                        onChange={e => {
-                          const val = e.target.value;
-                          if (val === 'custom') {
-                            updateConcept(idx, { name: ' ' }); // Use a space to trigger custom mode
-                          } else {
-                            updateConcept(idx, { name: val });
-                          }
+                {senda.concepts.map((concept, idx) => (
+                  <div key={idx} className="p-3 bg-[#2c1810]/50 rounded border border-[#5d3a1a]">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-bold uppercase text-[#a0785a]">
+                        {concept.isPrincipal ? 'Principal' : `Secundario ${idx}`}
+                      </span>
+                      <input 
+                        type="radio" 
+                        name="principalConcept" 
+                        checked={concept.isPrincipal}
+                        onChange={() => {
+                          const newConcepts = senda.concepts.map((c, i) => ({ ...c, isPrincipal: i === idx }));
+                          setSenda(prev => ({ ...prev, concepts: newConcepts }));
                         }}
-                        className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 text-sm focus:border-[#d4af37] outline-none mb-2"
-                      >
-                        <option value="">Seleccionar concepto...</option>
-                        {options.map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                        <option value="custom">Otro (Personalizado)...</option>
-                      </select>
-
-                      {(showCustomInput || concept.name === ' ') && (
-                        <input 
-                          type="text"
-                          value={concept.name === ' ' ? '' : concept.name}
-                          onChange={e => updateConcept(idx, { name: e.target.value })}
-                          placeholder="Escribe tu concepto personalizado..."
-                          className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 text-sm focus:border-[#d4af37] outline-none"
-                          autoFocus
-                        />
-                      )}
+                        className="text-[#d4af37] focus:ring-[#d4af37]"
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
-                <Shield className="w-5 h-5 text-[#d4af37]" /> Decisiones Estructurales
-              </h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-[#a0785a] mb-1">Energías Primigenias</label>
-                  <select 
-                    value={senda.energies}
-                    onChange={e => setSenda(prev => ({ ...prev, energies: parseInt(e.target.value) as EnergyType }))}
-                    className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 focus:border-[#d4af37] outline-none"
-                  >
-                    <option value={1}>1 Energía (0 PCS)</option>
-                    <option value={2}>2 Energías (4 PCS)</option>
-                    <option value={3}>3 Energías (10 PCS)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-[#a0785a] mb-1">Perfil de Vitalidad</label>
-                  <select 
-                    value={senda.vitalityProfile}
-                    onChange={e => setSenda(prev => ({ ...prev, vitalityProfile: e.target.value as VitalityProfile }))}
-                    className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 focus:border-[#d4af37] outline-none"
-                  >
-                    <option value="Titán">Titán (+6 Res/lvl, 8 PCS)</option>
-                    <option value="Caminante">Caminante (+4 Res/lvl, 4 PCS)</option>
-                    <option value="Sombra">Sombra (+2 Res/lvl, 0 PCS)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-[#a0785a] mb-1">Desventaja Narrativa</label>
-                  <select 
-                    value={senda.narrativeDisadvantage || ''}
-                    onChange={e => setSenda(prev => ({ ...prev, narrativeDisadvantage: e.target.value || undefined }))}
-                    className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 focus:border-[#d4af37] outline-none"
-                  >
-                    <option value="">Ninguna</option>
-                    {NARRATIVE_DISADVANTAGES.map(d => (
-                      <option key={d.id} value={d.id}>{d.name} (+{d.pcsGain} PCS)</option>
-                    ))}
-                  </select>
-                  {senda.narrativeDisadvantage && (
-                    <p className="text-xs mt-2 text-[#a0785a] italic">
-                      {NARRATIVE_DISADVANTAGES.find(d => d.id === senda.narrativeDisadvantage)?.restriction}
-                    </p>
-                  )}
-                </div>
+                    <input 
+                      type="text"
+                      value={concept.name}
+                      onChange={e => {
+                        const newConcepts = [...senda.concepts];
+                        newConcepts[idx].name = e.target.value;
+                        setSenda(prev => ({ ...prev, concepts: newConcepts }));
+                      }}
+                      placeholder="Nombre del concepto..."
+                      className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-1 text-sm mb-2"
+                    />
+                    <select 
+                      value={concept.category}
+                      onChange={e => {
+                        const newConcepts = [...senda.concepts];
+                        newConcepts[idx].category = e.target.value as any;
+                        setSenda(prev => ({ ...prev, concepts: newConcepts }));
+                      }}
+                      className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-1 text-xs"
+                    >
+                      <option value="Marciales">Marciales</option>
+                      <option value="Sociales">Sociales</option>
+                      <option value="Productivos">Productivos</option>
+                      <option value="Espirituales">Espirituales</option>
+                      <option value="Intelectuales">Intelectuales</option>
+                    </select>
+                  </div>
+                ))}
               </div>
             </section>
 
@@ -551,106 +517,48 @@ export default function App() {
                 <Zap className="w-5 h-5 text-[#d4af37]" /> Mejoras Afines y Contrarias
               </h2>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2 text-[10px] uppercase tracking-tighter mb-2">
-                  <div className="text-center text-green-400">Afines (3)</div>
-                  <div className="text-center text-red-400">Contrarias (2)</div>
-                </div>
-                <div className="max-h-60 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
-                  {IMPROVEMENT_CATEGORIES.map(cat => {
-                    const isAffinity = senda.affinities.includes(cat as ImprovementCategory);
-                    const isContrary = senda.contraries.includes(cat as ImprovementCategory);
-                    return (
-                      <div key={cat} className="flex items-center justify-between p-2 bg-[#2c1810]/30 rounded border border-[#5d3a1a]/30">
-                        <span className="text-xs truncate mr-2">{cat}</span>
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => toggleAffinity(cat as ImprovementCategory)}
-                            className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isAffinity ? 'bg-green-600 text-white' : 'bg-[#2c1810] border border-[#5d3a1a]'}`}
-                          >
-                            {isAffinity && <CheckCircle2 className="w-3 h-3" />}
-                          </button>
-                          <button 
-                            onClick={() => toggleContrary(cat as ImprovementCategory)}
-                            className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isContrary ? 'bg-red-600 text-white' : 'bg-[#2c1810] border border-[#5d3a1a]'}`}
-                          >
-                            {isContrary && <AlertTriangle className="w-3 h-3" />}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
-                <AlertTriangle className="w-5 h-5 text-[#d4af37]" /> Verificación
-              </h2>
-              {validationErrors.length > 0 ? (
-                <ul className="space-y-2">
-                  {validationErrors.map((err, i) => (
-                    <li key={i} className="text-red-400 text-sm flex gap-2">
-                      <span className="shrink-0">•</span> {err}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-green-400 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5" /> Senda válida y equilibrada
-                </div>
-              )}
-            </section>
-
-            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
-                <Info className="w-5 h-5 text-[#d4af37]" /> Resumen de Senda
-              </h2>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Pasivas:</span>
-                  <span className={pasivasCount < 2 ? 'text-red-400' : 'text-green-400'}>{pasivasCount} / 2</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Acciones:</span>
-                  <span className={accionesCount < 2 ? 'text-red-400' : 'text-green-400'}>{accionesCount} / 2</span>
-                </div>
-                {senda.vitalityProfile === 'Titán' && (
-                  <div className="flex justify-between">
-                    <span>Ofensivas (Titán):</span>
-                    <span className={offensiveCount > 2 ? 'text-red-400' : 'text-green-400'}>{offensiveCount} / 2</span>
+                <div>
+                  <label className="block text-xs text-[#a0785a] uppercase mb-1">Afines (Exactamente 3)</label>
+                  <div className="grid grid-cols-1 gap-1 max-h-40 overflow-y-auto p-2 bg-[#2c1810] rounded border border-[#5d3a1a]">
+                    {IMPROVEMENT_CATEGORIES.map(cat => (
+                      <label key={cat} className="flex items-center gap-2 text-xs cursor-pointer hover:text-[#d4af37]">
+                        <input 
+                          type="checkbox"
+                          checked={senda.affinities.includes(cat as any)}
+                          disabled={!senda.affinities.includes(cat as any) && senda.affinities.length >= 3}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setSenda(prev => ({ ...prev, affinities: [...prev.affinities, cat as any] }));
+                            } else {
+                              setSenda(prev => ({ ...prev, affinities: prev.affinities.filter(a => a !== cat) }));
+                            }
+                          }}
+                          className="rounded text-[#d4af37] focus:ring-[#d4af37]"
+                        /> {cat}
+                      </label>
+                    ))}
                   </div>
-                )}
-                {senda.vitalityProfile === 'Sombra' && (
-                  <div className="flex justify-between">
-                    <span>Evasión (Sombra):</span>
-                    <span className={evasionCount < 1 ? 'text-red-400' : 'text-green-400'}>{evasionCount} / 1</span>
-                  </div>
-                )}
-                <div className="border-t border-[#5d3a1a] my-2 pt-2">
-                  <div className="flex justify-between">
-                    <span>Conceptos:</span>
-                    <span className={senda.concepts.some(c => !c.name.trim()) ? 'text-red-400' : 'text-green-400'}>
-                      {senda.concepts.filter(c => c.name.trim()).length} / 3
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Mejoras Afines:</span>
-                    <span className={senda.affinities.length !== 3 ? 'text-red-400' : 'text-green-400'}>
-                      {senda.affinities.length} / 3
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Mejoras Contrarias:</span>
-                    <span className={senda.contraries.length !== 2 ? 'text-red-400' : 'text-green-400'}>
-                      {senda.contraries.length} / 2
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Equipo:</span>
-                    <span className={equipmentSpent > equipmentBudget ? 'text-red-400' : 'text-green-400'}>
-                      {equipmentSpent} / {equipmentBudget} L
-                    </span>
+                </div>
+                <div>
+                  <label className="block text-xs text-[#a0785a] uppercase mb-1">Contrarias (Exactamente 2)</label>
+                  <div className="grid grid-cols-1 gap-1 max-h-40 overflow-y-auto p-2 bg-[#2c1810] rounded border border-[#5d3a1a]">
+                    {IMPROVEMENT_CATEGORIES.map(cat => (
+                      <label key={cat} className="flex items-center gap-2 text-xs cursor-pointer hover:text-[#d4af37]">
+                        <input 
+                          type="checkbox"
+                          checked={senda.contraries.includes(cat as any)}
+                          disabled={!senda.contraries.includes(cat as any) && senda.contraries.length >= 2}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setSenda(prev => ({ ...prev, contraries: [...prev.contraries, cat as any] }));
+                            } else {
+                              setSenda(prev => ({ ...prev, contraries: prev.contraries.filter(a => a !== cat) }));
+                            }
+                          }}
+                          className="rounded text-[#d4af37] focus:ring-[#d4af37]"
+                        /> {cat}
+                      </label>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -661,89 +569,311 @@ export default function App() {
                 <Package className="w-5 h-5 text-[#d4af37]" /> Equipo Inicial
               </h2>
               <div className="space-y-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs text-[#a0785a]">Presupuesto: {equipmentBudget} L</span>
-                  <span className={`text-sm font-bold ${equipmentSpent > equipmentBudget ? 'text-red-400' : 'text-green-400'}`}>
+                <div className="flex justify-between items-center bg-[#2c1810] p-2 rounded border border-[#5d3a1a]">
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-[#d4af37]" />
+                    <span className="text-xs font-bold uppercase">Presupuesto</span>
+                  </div>
+                  <span className={`font-bold ${equipmentSpent > equipmentBudget ? 'text-red-400' : 'text-[#d4af37]'}`}>
                     {equipmentSpent} / {equipmentBudget} L
                   </span>
                 </div>
-                
                 <div className="space-y-2">
-                  {senda.equipment.map(item => (
-                    <div key={item.id} className="p-2 bg-[#2c1810]/50 rounded border border-[#5d3a1a] space-y-2">
-                      <div className="flex gap-2">
-                        <input 
-                          type="text"
-                          value={item.name}
-                          onChange={e => updateEquipment(item.id, { name: e.target.value })}
-                          placeholder="Nombre del objeto"
-                          className="flex-1 bg-[#2c1810] border-[#5d3a1a] rounded p-1 text-xs focus:border-[#d4af37] outline-none"
-                        />
-                        <input 
-                          type="number"
-                          value={item.cost}
-                          onChange={e => updateEquipment(item.id, { cost: parseInt(e.target.value) || 0 })}
-                          className="w-16 bg-[#2c1810] border-[#5d3a1a] rounded p-1 text-xs focus:border-[#d4af37] outline-none"
-                        />
-                        <button 
-                          onClick={() => removeEquipment(item.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                  {senda.equipment.map((item, idx) => (
+                    <div key={item.id} className="p-2 bg-[#2c1810]/50 rounded border border-[#5d3a1a] flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-sm font-bold">{item.name}</div>
+                        <div className="text-[10px] text-[#a0785a]">{item.cost} L</div>
                       </div>
+                      <button 
+                        onClick={() => setSenda(prev => ({ ...prev, equipment: prev.equipment.filter((_, i) => i !== idx) }))}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
-
                 <button 
-                  onClick={addEquipment}
-                  className="w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-[#5d3a1a] rounded-lg text-[#a0785a] hover:border-[#d4af37] hover:text-[#d4af37] transition-all text-sm"
+                  onClick={() => {
+                    const name = prompt('Nombre del objeto:');
+                    const cost = parseInt(prompt('Coste en lectos (L):') || '0');
+                    if (name && !isNaN(cost)) {
+                      setSenda(prev => ({ 
+                        ...prev, 
+                        equipment: [...prev.equipment, { id: Math.random().toString(36).substr(2, 9), name, cost, description: '' }] 
+                      }));
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-2 bg-[#5d3a1a] hover:bg-[#8b4513] text-white py-2 rounded text-sm transition-colors"
                 >
                   <Plus className="w-4 h-4" /> Añadir Objeto
                 </button>
               </div>
             </section>
-          </div>
 
-          {/* Right Column: Abilities */}
-          <div className="lg:col-span-2 space-y-4">
-            {senda.abilities.map(ability => (
-              <div 
-                key={ability.id}
-                className={`bg-[#3e2723] rounded-xl border-2 transition-all duration-300 ${expandedAbility === ability.id ? 'border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.2)]' : 'border-[#5d3a1a] shadow-lg'}`}
-              >
-                <div 
-                  className="p-4 flex justify-between items-center cursor-pointer"
-                  onClick={() => setExpandedAbility(expandedAbility === ability.id ? null : ability.id)}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      ability.type === 'Pasiva' ? 'bg-blue-900/40 text-blue-300' :
-                      ability.type === 'Acción' ? 'bg-red-900/40 text-red-300' :
-                      ability.type === 'Reactiva' ? 'bg-amber-900/40 text-amber-300' :
-                      'bg-green-900/40 text-green-300'
-                    }`}>
-                      {ability.type === 'Pasiva' && <Zap className="w-5 h-5" />}
-                      {ability.type === 'Acción' && <Sword className="w-5 h-5" />}
-                      {ability.type === 'Reactiva' && <Shield className="w-5 h-5" />}
-                      {ability.type === 'Interacción' && <Users className="w-5 h-5" />}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{ability.name}</h3>
-                      <div className="text-xs text-[#a0785a] uppercase tracking-widest">{ability.range} • {ability.type}</div>
-                    </div>
+            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
+                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
+                    <Book className="w-5 h-5 text-[#d4af37]" /> Fantasía Central
+                  </h2>
+                  <textarea 
+                    value={senda.fantasy}
+                    onChange={e => setSenda(prev => ({ ...prev, fantasy: e.target.value }))}
+                    placeholder="Define la idea central del personaje en una sola frase..."
+                    className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 focus:border-[#d4af37] outline-none text-sm italic h-24 resize-none"
+                  />
+                </section>
+
+                <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
+                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
+                    <Star className="w-5 h-5 text-[#d4af37]" /> Conceptos de la Senda
+                  </h2>
+                  <div className="space-y-4">
+                    {senda.concepts.map((concept, idx) => {
+                      const options = PREDEFINED_CONCEPTS[concept.category] || [];
+                      const isPredefined = options.includes(concept.name);
+                      const showCustomInput = concept.name !== '' && !isPredefined;
+
+                      return (
+                        <div key={idx} className="p-3 bg-[#2c1810]/50 rounded border border-[#5d3a1a]">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs uppercase font-bold text-[#a0785a]">
+                              {concept.isPrincipal ? 'Concepto Principal' : `Concepto Secundario ${idx}`}
+                            </span>
+                            <select 
+                              value={concept.category}
+                              onChange={e => updateConcept(idx, { category: e.target.value as ConceptCategory, name: '' })}
+                              className="bg-transparent text-xs text-[#d4af37] border-none focus:ring-0 cursor-pointer"
+                            >
+                              <option value="Marciales">Marciales</option>
+                              <option value="Sociales">Sociales</option>
+                              <option value="Productivos">Productivos</option>
+                              <option value="Espirituales">Espirituales</option>
+                              <option value="Intelectuales">Intelectuales</option>
+                            </select>
+                          </div>
+                          
+                          <select
+                            value={isPredefined ? concept.name : (concept.name === '' ? '' : 'custom')}
+                            onChange={e => {
+                              const val = e.target.value;
+                              if (val === 'custom') {
+                                updateConcept(idx, { name: ' ' }); // Use a space to trigger custom mode
+                              } else {
+                                updateConcept(idx, { name: val });
+                              }
+                            }}
+                            className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 text-sm focus:border-[#d4af37] outline-none mb-2"
+                          >
+                            <option value="">Seleccionar concepto...</option>
+                            {options.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                            <option value="custom">Otro (Personalizado)...</option>
+                          </select>
+
+                          {(showCustomInput || concept.name === ' ') && (
+                            <input 
+                              type="text"
+                              value={concept.name === ' ' ? '' : concept.name}
+                              onChange={e => updateConcept(idx, { name: e.target.value })}
+                              placeholder="Escribe tu concepto personalizado..."
+                              className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 text-sm focus:border-[#d4af37] outline-none"
+                              autoFocus
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="text-xs text-[#a0785a]">Coste PS</div>
-                      <div className={`font-bold ${calculateAbilityPS(ability) > ability.psCap ? 'text-red-400' : 'text-[#d4af37]'}`}>
-                        {calculateAbilityPS(ability)} / {ability.psCap}
-                      </div>
-                    </div>
-                    {expandedAbility === ability.id ? <ChevronUp /> : <ChevronDown />}
+                </section>
+              </div>
+
+              <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
+                  <Zap className="w-5 h-5 text-[#d4af37]" /> Mejoras Afines y Contrarias
+                </h2>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2 text-[10px] uppercase tracking-tighter mb-2">
+                    <div className="text-center text-green-400">Afines (3)</div>
+                    <div className="text-center text-red-400">Contrarias (2)</div>
+                  </div>
+                  <div className="max-h-[400px] overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                    {IMPROVEMENT_CATEGORIES.map(cat => {
+                      const isAffinity = senda.affinities.includes(cat as ImprovementCategory);
+                      const isContrary = senda.contraries.includes(cat as ImprovementCategory);
+                      return (
+                        <div key={cat} className="flex items-center justify-between p-2 bg-[#2c1810]/30 rounded border border-[#5d3a1a]/30">
+                          <span className="text-xs truncate mr-2">{cat}</span>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => toggleAffinity(cat as ImprovementCategory)}
+                              className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isAffinity ? 'bg-green-600 text-white' : 'bg-[#2c1810] border border-[#5d3a1a]'}`}
+                            >
+                              {isAffinity && <CheckCircle2 className="w-3 h-3" />}
+                            </button>
+                            <button 
+                              onClick={() => toggleContrary(cat as ImprovementCategory)}
+                              className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isContrary ? 'bg-red-600 text-white' : 'bg-[#2c1810] border border-[#5d3a1a]'}`}
+                            >
+                              {isContrary && <AlertTriangle className="w-3 h-3" />}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
+              </section>
+            </motion.div>
+          )}
+
+          {activeTab === 'estructura' && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-2xl mx-auto"
+            >
+              <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
+                  <Shield className="w-5 h-5 text-[#d4af37]" /> Decisiones Estructurales
+                </h2>
+                
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm text-[#a0785a] mb-2 font-bold uppercase tracking-wider">Energías Primigenias</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {[1, 2, 3].map(num => (
+                        <button
+                          key={num}
+                          onClick={() => setSenda(prev => ({ ...prev, energies: num as EnergyType }))}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            senda.energies === num 
+                              ? 'border-[#d4af37] bg-[#5d3a1a]/30 text-[#d4af37]' 
+                              : 'border-[#5d3a1a] bg-[#2c1810]/50 text-[#a0785a] hover:border-[#a0785a]'
+                          }`}
+                        >
+                          <div className="text-lg font-bold">{num} Energía{num > 1 ? 's' : ''}</div>
+                          <div className="text-xs opacity-70">{num === 1 ? '0' : num === 2 ? '4' : '10'} PCS</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[#a0785a] mb-2 font-bold uppercase tracking-wider">Perfil de Vitalidad</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {['Titán', 'Caminante', 'Sombra'].map(profile => (
+                        <button
+                          key={profile}
+                          onClick={() => setSenda(prev => ({ ...prev, vitalityProfile: profile as VitalityProfile }))}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            senda.vitalityProfile === profile 
+                              ? 'border-[#d4af37] bg-[#5d3a1a]/30 text-[#d4af37]' 
+                              : 'border-[#5d3a1a] bg-[#2c1810]/50 text-[#a0785a] hover:border-[#a0785a]'
+                          }`}
+                        >
+                          <div className="text-lg font-bold">{profile}</div>
+                          <div className="text-xs opacity-70">
+                            {profile === 'Titán' ? '+6 Res/lvl (8 PCS)' : profile === 'Caminante' ? '+4 Res/lvl (4 PCS)' : '+2 Res/lvl (0 PCS)'}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[#a0785a] mb-2 font-bold uppercase tracking-wider">Desventaja Narrativa</label>
+                    <select 
+                      value={senda.narrativeDisadvantage || ''}
+                      onChange={e => setSenda(prev => ({ ...prev, narrativeDisadvantage: e.target.value || undefined }))}
+                      className="w-full bg-[#2c1810] border-2 border-[#5d3a1a] rounded-lg p-3 focus:border-[#d4af37] outline-none text-[#f4e4bc]"
+                    >
+                      <option value="">Ninguna</option>
+                      {NARRATIVE_DISADVANTAGES.map(d => (
+                        <option key={d.id} value={d.id}>{d.name} (+{d.pcsGain} PCS)</option>
+                      ))}
+                    </select>
+                    {senda.narrativeDisadvantage && (
+                      <div className="mt-4 p-4 bg-[#2c1810]/80 border border-[#d4af37]/30 rounded-lg italic text-sm text-[#a0785a]">
+                        <div className="font-bold text-[#d4af37] mb-1 not-italic uppercase text-xs">Restricción:</div>
+                        {NARRATIVE_DISADVANTAGES.find(d => d.id === senda.narrativeDisadvantage)?.restriction}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            </motion.div>
+          )}
+
+          {activeTab === 'habilidades' && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4 max-w-4xl mx-auto"
+            >
+              <div className="grid grid-cols-1 gap-4">
+                {senda.abilities.map(ability => (
+                <motion.div 
+                  layout
+                  key={ability.id}
+                  className={`bg-[#3e2723] rounded-2xl border-2 transition-all duration-300 group ${expandedAbility === ability.id ? 'border-[#d4af37] shadow-[0_10px_30px_rgba(0,0,0,0.5),0_0_20px_rgba(212,175,55,0.1)]' : 'border-[#5d3a1a] hover:border-[#a0785a]/50 shadow-xl'}`}
+                >
+                  <div 
+                    className="p-5 flex justify-between items-center cursor-pointer select-none"
+                    onClick={() => setExpandedAbility(expandedAbility === ability.id ? null : ability.id)}
+                  >
+                    <div className="flex items-center gap-5">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-inner ${
+                        ability.type === 'Pasiva' ? 'bg-blue-900/40 text-blue-300 border border-blue-500/30' :
+                        ability.type === 'Acción' ? 'bg-red-900/40 text-red-300 border border-red-500/30' :
+                        ability.type === 'Reactiva' ? 'bg-amber-900/40 text-amber-300 border border-amber-500/30' :
+                        'bg-green-900/40 text-green-300 border border-green-500/30'
+                      }`}>
+                        {ability.type === 'Pasiva' && <Zap className="w-6 h-6" />}
+                        {ability.type === 'Acción' && <Sword className="w-6 h-6" />}
+                        {ability.type === 'Reactiva' && <Shield className="w-6 h-6" />}
+                        {ability.type === 'Interacción' && <Users className="w-6 h-6" />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-xl text-[#f4e4bc] mb-0.5">{ability.name}</h3>
+                          {ability.isCumbre && (
+                            <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full font-bold uppercase tracking-widest">Cumbre</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-[#a0785a] font-medium uppercase tracking-widest">
+                          <span>{ability.range}</span>
+                          <span className="w-1 h-1 rounded-full bg-[#5d3a1a]" />
+                          <span className={
+                            ability.type === 'Pasiva' ? 'text-blue-400' :
+                            ability.type === 'Acción' ? 'text-red-400' :
+                            ability.type === 'Reactiva' ? 'text-amber-400' :
+                            'text-green-400'
+                          }>{ability.type}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right hidden sm:block">
+                        <div className="text-[10px] text-[#a0785a] uppercase font-bold tracking-widest mb-1">Capacidad PS</div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-1.5 bg-[#2c1810] rounded-full overflow-hidden border border-[#5d3a1a]/50">
+                            <div 
+                              className={`h-full transition-all duration-500 ${calculateAbilityPS(ability) > ability.psCap ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-[#d4af37]'}`}
+                              style={{ width: `${Math.min(100, (calculateAbilityPS(ability) / ability.psCap) * 100)}%` }}
+                            />
+                          </div>
+                          <span className={`font-mono font-bold text-sm ${calculateAbilityPS(ability) > ability.psCap ? 'text-red-400' : 'text-[#d4af37]'}`}>
+                            {calculateAbilityPS(ability)}/{ability.psCap}
+                          </span>
+                        </div>
+                      </div>
+                      <div className={`p-2 rounded-full transition-colors ${expandedAbility === ability.id ? 'bg-[#5d3a1a] text-[#d4af37]' : 'text-[#a0785a] group-hover:text-[#f4e4bc]'}`}>
+                        {expandedAbility === ability.id ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                      </div>
+                    </div>
+                  </div>
 
                 <AnimatePresence>
                   {expandedAbility === ability.id && (
@@ -883,72 +1013,109 @@ export default function App() {
                         <div>
                           <div className="flex justify-between items-center mb-4">
                             <h4 className="text-sm font-bold uppercase tracking-widest text-[#d4af37]">Módulos</h4>
-                            <div className="relative group">
-                              <button className="flex items-center gap-1 bg-[#5d3a1a] hover:bg-[#8b4513] text-white px-3 py-1 rounded text-sm transition-colors">
+                            <div className="flex items-center gap-2">
+                              <button 
+                                onClick={() => setModuleSelectorAbilityId(ability.id)}
+                                className="flex items-center gap-2 bg-[#5d3a1a] hover:bg-[#d4af37] hover:text-[#2c1810] px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-md active:scale-95"
+                              >
                                 <Plus className="w-4 h-4" /> Añadir Módulo
                               </button>
-                              <div className="absolute right-0 mt-2 w-72 bg-[#3e2723] border-2 border-[#5d3a1a] rounded-lg shadow-2xl z-50 hidden group-hover:block max-h-96 overflow-y-auto">
-                                {MODULES.filter(m => {
-                                  if (m.type === ability.type) return true;
-                                  if (ability.range === 'Rango 3' && ability.type === 'Acción' && m.type === 'Suprema') return true;
-                                  return false;
-                                }).map(m => (
-                                  <div 
-                                    key={m.id}
-                                    onClick={() => addModuleToAbility(ability.id, m.id)}
-                                    className="p-3 hover:bg-[#5d3a1a] cursor-pointer border-b border-[#2c1810] last:border-none"
-                                  >
-                                    <div className="flex justify-between font-bold text-sm">
-                                      <span>{m.name}</span>
-                                      <span className="text-[#d4af37]">{m.baseCost} PS</span>
-                                    </div>
-                                    <div className="text-xs text-[#a0785a] line-clamp-1">{m.description}</div>
-                                  </div>
-                                ))}
-                              </div>
                             </div>
                           </div>
 
                           <div className="space-y-3">
-                            {ability.modules.map((sm, idx) => {
-                              const mod = MODULES.find(m => m.id === sm.moduleId);
-                              if (!mod) return null;
-                              return (
-                                <div key={idx} className="flex flex-col md:flex-row gap-4 p-3 bg-[#2c1810]/90 rounded border border-[#5d3a1a] items-center">
-                                  <div className="flex-1">
-                                    <div className="font-bold text-[#d4af37]">{mod.name}</div>
-                                    <div className="text-xs text-[#a0785a]">{mod.description}</div>
-                                  </div>
-                                  
-                                  {mod.appliesScale && (
-                                    <div className="flex items-center gap-2">
-                                      <label className="text-xs text-[#a0785a]">Escala:</label>
-                                      <select 
-                                        value={sm.condition}
-                                        onChange={e => updateModuleCondition(ability.id, idx, e.target.value as ConditionScale)}
-                                        className="bg-[#3e2723] border-[#5d3a1a] rounded p-1 text-xs"
-                                      >
-                                        <option value="Específica">Específica (x1)</option>
-                                        <option value="General">General (x2)</option>
-                                        <option value="Sin condición">Sin condición (x4)</option>
-                                      </select>
-                                    </div>
-                                  )}
+                            <AnimatePresence mode="popLayout">
+                              {ability.modules.map((sm, idx) => {
+                                const mod = MODULES.find(m => m.id === sm.moduleId);
+                                if (!mod) return null;
+                                
+                                const getModuleIcon = (category: string) => {
+                                  switch (category) {
+                                    case 'Bonos': return <Trophy className="w-4 h-4 text-yellow-500" />;
+                                    case 'Conocimiento': return <BookOpen className="w-4 h-4 text-blue-400" />;
+                                    case 'Supervivencia': return <Heart className="w-4 h-4 text-green-400" />;
+                                    case 'Defensivas': return <Shield className="w-4 h-4 text-blue-300" />;
+                                    case 'Ofensivas': return <Sword className="w-4 h-4 text-red-500" />;
+                                    case 'Apoyo': return <Heart className="w-4 h-4 text-pink-400" />;
+                                    case 'Control': return <Target className="w-4 h-4 text-purple-400" />;
+                                    case 'Social': return <Users className="w-4 h-4 text-orange-400" />;
+                                    case 'Efectos Cumbre': return <Crown className="w-4 h-4 text-amber-300" />;
+                                    default: return <Package className="w-4 h-4 text-[#a0785a]" />;
+                                  }
+                                };
 
-                                  <div className="flex items-center gap-4">
-                                    <div className="font-bold text-[#d4af37]">
-                                      {mod.appliesScale ? mod.baseCost * CONDITION_FACTORS[sm.condition] : mod.baseCost} PS
+                                const moduleCost = mod.appliesScale ? mod.baseCost * CONDITION_FACTORS[sm.condition] : mod.baseCost;
+
+                                return (
+                                  <motion.div 
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, x: -20 }}
+                                    key={`${ability.id}-mod-${idx}`} 
+                                    className="group/module flex flex-col md:flex-row gap-4 p-4 bg-[#2c1810] border-2 border-[#5d3a1a] rounded-xl hover:border-[#d4af37]/50 transition-all shadow-md relative overflow-hidden"
+                                  >
+                                    {/* Decoration */}
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-[#5d3a1a] group-hover/module:bg-[#d4af37] transition-colors" />
+                                    
+                                    <div className="flex-1 flex gap-3">
+                                      <div className="mt-1 p-2 bg-[#3e2723] rounded-lg border border-[#5d3a1a] h-fit">
+                                        {getModuleIcon(mod.category)}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className="font-bold text-[#f4e4bc] truncate">{mod.name}</span>
+                                          <span className="text-[10px] px-1.5 py-0.5 bg-[#5d3a1a]/50 text-[#d4af37] border border-[#d4af37]/20 rounded whitespace-nowrap">
+                                            {mod.category}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-[#a0785a] line-clamp-2 leading-relaxed italic">{mod.description}</div>
+                                      </div>
                                     </div>
-                                    <button 
-                                      onClick={() => removeModuleFromAbility(ability.id, idx)}
-                                      className="text-red-400 hover:text-red-300 transition-colors"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                    
+                                    <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-[#5d3a1a] pt-3 md:pt-0 md:pl-4">
+                                      {mod.appliesScale && (
+                                        <div className="flex flex-col gap-1 min-w-[140px]">
+                                          <label className="text-[10px] text-[#a0785a] uppercase font-bold tracking-widest flex items-center gap-1">
+                                            <Compass className="w-3 h-3" /> Condición / Escala
+                                          </label>
+                                          <select 
+                                            value={sm.condition}
+                                            onChange={e => updateModuleCondition(ability.id, idx, e.target.value as ConditionScale)}
+                                            className="bg-[#3e2723] border-[#5d3a1a] rounded p-1.5 text-xs text-[#f4e4bc] outline-none hover:border-[#d4af37]/50 transition-colors cursor-pointer"
+                                          >
+                                            <option value="Específica">Específica (x1)</option>
+                                            <option value="General">General (x2)</option>
+                                            <option value="Sin condición">Sin condición (x4)</option>
+                                          </select>
+                                        </div>
+                                      )}
+
+                                      <div className="flex items-center gap-4 ml-auto">
+                                        <div className="text-right">
+                                          <div className="text-[10px] text-[#a0785a] uppercase font-bold tracking-widest">Coste</div>
+                                          <div className="font-bold text-[#d4af37] text-xl flex items-baseline gap-1">
+                                            {moduleCost} <span className="text-[10px]">PS</span>
+                                          </div>
+                                        </div>
+                                        <button 
+                                          onClick={() => removeModuleFromAbility(ability.id, idx)}
+                                          className="p-2.5 text-[#a0785a] hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                                          title="Eliminar módulo"
+                                        >
+                                          <Trash2 className="w-5 h-5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                );
+                              })}
+                            </AnimatePresence>
+                            {ability.modules.length === 0 && (
+                              <div className="py-10 text-center border-2 border-dashed border-[#5d3a1a] rounded-xl text-[#a0785a] italic text-sm">
+                                No has añadido módulos a esta habilidad aún.
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -972,11 +1139,195 @@ export default function App() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                </motion.div>
+              ))}
               </div>
-            ))}
-          </div>
+            </motion.div>
+          )}
+
+        {activeTab === 'equipo' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
+            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
+                <Package className="w-5 h-5 text-[#d4af37]" /> Equipo Inicial
+              </h2>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-4 p-4 bg-[#2c1810] rounded-lg border border-[#5d3a1a]">
+                  <div>
+                    <span className="text-xs text-[#a0785a] uppercase block">Presupuesto Total</span>
+                    <span className="text-xl font-bold text-[#d4af37]">{equipmentBudget} L</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs text-[#a0785a] uppercase block">Gastado</span>
+                    <span className={`text-xl font-bold ${equipmentSpent > equipmentBudget ? 'text-red-400' : 'text-green-400'}`}>
+                      {equipmentSpent} L
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  {senda.equipment.map(item => (
+                    <div key={item.id} className="p-4 bg-[#2c1810]/50 rounded-lg border border-[#5d3a1a] flex flex-col md:flex-row gap-4 items-start md:items-center">
+                      <div className="flex-1 w-full">
+                        <label className="block text-[10px] text-[#a0785a] uppercase mb-1">Nombre del Objeto</label>
+                        <input 
+                          type="text"
+                          value={item.name}
+                          onChange={e => updateEquipment(item.id, { name: e.target.value })}
+                          placeholder="Ej: Espada de Acero, Poción de Vida..."
+                          className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 text-sm focus:border-[#d4af37] outline-none"
+                        />
+                      </div>
+                      <div className="w-full md:w-32">
+                        <label className="block text-[10px] text-[#a0785a] uppercase mb-1">Coste (L)</label>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="number"
+                            value={item.cost}
+                            onChange={e => updateEquipment(item.id, { cost: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-2 text-sm focus:border-[#d4af37] outline-none"
+                          />
+                          <button 
+                            onClick={() => removeEquipment(item.id)}
+                            className="p-2 text-red-400 hover:bg-red-400/10 rounded transition-colors"
+                            title="Eliminar objeto"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {senda.equipment.length === 0 && (
+                  <div className="text-center py-12 border-2 border-dashed border-[#5d3a1a] rounded-xl text-[#a0785a] italic">
+                    No has añadido equipo todavía.
+                  </div>
+                )}
+
+                <button 
+                  onClick={addEquipment}
+                  className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-[#5d3a1a] rounded-xl text-[#a0785a] hover:border-[#d4af37] hover:text-[#d4af37] transition-all font-bold"
+                >
+                  <Plus className="w-5 h-5" /> Añadir Nuevo Objeto al Equipo
+                </button>
+              </div>
+            </section>
+          </motion.div>
+        )}
+
+        {activeTab === 'resumen' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          >
+            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
+                <AlertTriangle className="w-5 h-5 text-[#d4af37]" /> Estado de Validación
+              </h2>
+              {validationErrors.length > 0 ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-[#a0785a]">Se han detectado los siguientes problemas que deben corregirse:</p>
+                  <ul className="space-y-3">
+                    {validationErrors.map((err, i) => (
+                      <li key={i} className="bg-red-900/20 border border-red-900/50 p-3 rounded-lg text-red-300 text-sm flex gap-3">
+                        <AlertTriangle className="w-5 h-5 shrink-0" /> {err}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="bg-green-900/20 border border-green-900/50 p-6 rounded-xl text-green-400 flex flex-col items-center gap-4 text-center">
+                  <CheckCircle2 className="w-12 h-12" />
+                  <div>
+                    <h3 className="text-lg font-bold">¡Senda Válida!</h3>
+                    <p className="text-sm opacity-80">Todos los requisitos del sistema SDSM v3 se han cumplido correctamente.</p>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
+                <Info className="w-5 h-5 text-[#d4af37]" /> Resumen de Selección
+              </h2>
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-[#2c1810] rounded-lg border border-[#5d3a1a]">
+                    <span className="text-[10px] text-[#a0785a] uppercase block">Pasivas</span>
+                    <span className={`text-lg font-bold ${pasivasCount < 2 ? 'text-red-400' : 'text-green-400'}`}>{pasivasCount} / 2</span>
+                  </div>
+                  <div className="p-3 bg-[#2c1810] rounded-lg border border-[#5d3a1a]">
+                    <span className="text-[10px] text-[#a0785a] uppercase block">Acciones</span>
+                    <span className={`text-lg font-bold ${accionesCount < 2 ? 'text-red-400' : 'text-green-400'}`}>{accionesCount} / 2</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center p-2 border-b border-[#5d3a1a]/30">
+                    <span className="text-[#a0785a]">Conceptos Definidos:</span>
+                    <span className={senda.concepts.some(c => !c.name.trim()) ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>
+                      {senda.concepts.filter(c => c.name.trim()).length} / 3
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 border-b border-[#5d3a1a]/30">
+                    <span className="text-[#a0785a]">Mejoras Afines:</span>
+                    <span className={senda.affinities.length !== 3 ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>
+                      {senda.affinities.length} / 3
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 border-b border-[#5d3a1a]/30">
+                    <span className="text-[#a0785a]">Mejoras Contrarias:</span>
+                    <span className={senda.contraries.length !== 2 ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>
+                      {senda.contraries.length} / 2
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 border-b border-[#5d3a1a]/30">
+                    <span className="text-[#a0785a]">Presupuesto Equipo:</span>
+                    <span className={equipmentSpent > equipmentBudget ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>
+                      {equipmentSpent} / {equipmentBudget} L
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button className="flex-1 bg-[#5d3a1a] hover:bg-[#8b4513] text-[#f4e4bc] py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-lg">
+                    <Save className="w-5 h-5" /> Guardar Senda
+                  </button>
+                  <button className="flex-1 bg-[#d4af37] hover:bg-[#b8860b] text-[#2c1810] py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-lg">
+                    <Download className="w-5 h-5" /> Exportar PDF
+                  </button>
+                </div>
+              </div>
+            </section>
+          </motion.div>
+        )}
         </div>
 
+        <ModuleSelector 
+          isOpen={!!moduleSelectorAbilityId}
+          onClose={() => setModuleSelectorAbilityId(null)}
+          abilityId={moduleSelectorAbilityId || ''}
+          abilityType={senda.abilities.find(a => a.id === moduleSelectorAbilityId)?.type || 'Acción'}
+          abilityRange={senda.abilities.find(a => a.id === moduleSelectorAbilityId)?.range || 'Rango 1'}
+          onSelect={(moduleId) => {
+            if (moduleSelectorAbilityId) {
+              addModuleToAbility(moduleSelectorAbilityId, moduleId);
+              setModuleSelectorAbilityId(null);
+            }
+          }}
+          currentCategory={moduleSelectorCategory}
+          setCategory={setModuleSelectorCategory}
+          searchQuery={moduleSearchQuery}
+          setSearchQuery={setModuleSearchQuery}
+        />
+        
         {/* Footer Actions */}
         <footer className="mt-12 border-t-4 border-[#5d3a1a] pt-8 flex flex-col md:flex-row justify-between items-center gap-6 pb-12">
           <div className="flex items-center gap-4 text-[#a0785a]">
