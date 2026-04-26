@@ -460,159 +460,6 @@ export default function App() {
             >
               <div className="space-y-6">
                 <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
-                <Star className="w-5 h-5 text-[#d4af37]" /> Conceptos de la Senda
-              </h2>
-              <div className="space-y-4">
-                {senda.concepts.map((concept, idx) => (
-                  <div key={idx} className="p-3 bg-[#2c1810]/50 rounded border border-[#5d3a1a]">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-bold uppercase text-[#a0785a]">
-                        {concept.isPrincipal ? 'Principal' : `Secundario ${idx}`}
-                      </span>
-                      <input 
-                        type="radio" 
-                        name="principalConcept" 
-                        checked={concept.isPrincipal}
-                        onChange={() => {
-                          const newConcepts = senda.concepts.map((c, i) => ({ ...c, isPrincipal: i === idx }));
-                          setSenda(prev => ({ ...prev, concepts: newConcepts }));
-                        }}
-                        className="text-[#d4af37] focus:ring-[#d4af37]"
-                      />
-                    </div>
-                    <input 
-                      type="text"
-                      value={concept.name}
-                      onChange={e => {
-                        const newConcepts = [...senda.concepts];
-                        newConcepts[idx].name = e.target.value;
-                        setSenda(prev => ({ ...prev, concepts: newConcepts }));
-                      }}
-                      placeholder="Nombre del concepto..."
-                      className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-1 text-sm mb-2"
-                    />
-                    <select 
-                      value={concept.category}
-                      onChange={e => {
-                        const newConcepts = [...senda.concepts];
-                        newConcepts[idx].category = e.target.value as any;
-                        setSenda(prev => ({ ...prev, concepts: newConcepts }));
-                      }}
-                      className="w-full bg-[#2c1810] border-[#5d3a1a] rounded p-1 text-xs"
-                    >
-                      <option value="Marciales">Marciales</option>
-                      <option value="Sociales">Sociales</option>
-                      <option value="Productivos">Productivos</option>
-                      <option value="Espirituales">Espirituales</option>
-                      <option value="Intelectuales">Intelectuales</option>
-                    </select>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
-                <Zap className="w-5 h-5 text-[#d4af37]" /> Mejoras Afines y Contrarias
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs text-[#a0785a] uppercase mb-1">Afines (Exactamente 3)</label>
-                  <div className="grid grid-cols-1 gap-1 max-h-40 overflow-y-auto p-2 bg-[#2c1810] rounded border border-[#5d3a1a]">
-                    {IMPROVEMENT_CATEGORIES.map(cat => (
-                      <label key={cat} className="flex items-center gap-2 text-xs cursor-pointer hover:text-[#d4af37]">
-                        <input 
-                          type="checkbox"
-                          checked={senda.affinities.includes(cat as any)}
-                          disabled={!senda.affinities.includes(cat as any) && senda.affinities.length >= 3}
-                          onChange={e => {
-                            if (e.target.checked) {
-                              setSenda(prev => ({ ...prev, affinities: [...prev.affinities, cat as any] }));
-                            } else {
-                              setSenda(prev => ({ ...prev, affinities: prev.affinities.filter(a => a !== cat) }));
-                            }
-                          }}
-                          className="rounded text-[#d4af37] focus:ring-[#d4af37]"
-                        /> {cat}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-[#a0785a] uppercase mb-1">Contrarias (Exactamente 2)</label>
-                  <div className="grid grid-cols-1 gap-1 max-h-40 overflow-y-auto p-2 bg-[#2c1810] rounded border border-[#5d3a1a]">
-                    {IMPROVEMENT_CATEGORIES.map(cat => (
-                      <label key={cat} className="flex items-center gap-2 text-xs cursor-pointer hover:text-[#d4af37]">
-                        <input 
-                          type="checkbox"
-                          checked={senda.contraries.includes(cat as any)}
-                          disabled={!senda.contraries.includes(cat as any) && senda.contraries.length >= 2}
-                          onChange={e => {
-                            if (e.target.checked) {
-                              setSenda(prev => ({ ...prev, contraries: [...prev.contraries, cat as any] }));
-                            } else {
-                              setSenda(prev => ({ ...prev, contraries: prev.contraries.filter(a => a !== cat) }));
-                            }
-                          }}
-                          className="rounded text-[#d4af37] focus:ring-[#d4af37]"
-                        /> {cat}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
-                <Package className="w-5 h-5 text-[#d4af37]" /> Equipo Inicial
-              </h2>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center bg-[#2c1810] p-2 rounded border border-[#5d3a1a]">
-                  <div className="flex items-center gap-2">
-                    <Coins className="w-4 h-4 text-[#d4af37]" />
-                    <span className="text-xs font-bold uppercase">Presupuesto</span>
-                  </div>
-                  <span className={`font-bold ${equipmentSpent > equipmentBudget ? 'text-red-400' : 'text-[#d4af37]'}`}>
-                    {equipmentSpent} / {equipmentBudget} L
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {senda.equipment.map((item, idx) => (
-                    <div key={item.id} className="p-2 bg-[#2c1810]/50 rounded border border-[#5d3a1a] flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="text-sm font-bold">{item.name}</div>
-                        <div className="text-[10px] text-[#a0785a]">{item.cost} L</div>
-                      </div>
-                      <button 
-                        onClick={() => setSenda(prev => ({ ...prev, equipment: prev.equipment.filter((_, i) => i !== idx) }))}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button 
-                  onClick={() => {
-                    const name = prompt('Nombre del objeto:');
-                    const cost = parseInt(prompt('Coste en lectos (L):') || '0');
-                    if (name && !isNaN(cost)) {
-                      setSenda(prev => ({ 
-                        ...prev, 
-                        equipment: [...prev.equipment, { id: Math.random().toString(36).substr(2, 9), name, cost, description: '' }] 
-                      }));
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-2 bg-[#5d3a1a] hover:bg-[#8b4513] text-white py-2 rounded text-sm transition-colors"
-                >
-                  <Plus className="w-4 h-4" /> Añadir Objeto
-                </button>
-              </div>
-            </section>
-
-            <section className="bg-[#3e2723] p-6 rounded-xl border-2 border-[#5d3a1a] shadow-xl">
                   <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[#5d3a1a] pb-2">
                     <Book className="w-5 h-5 text-[#d4af37]" /> Fantasía Central
                   </h2>
@@ -640,17 +487,31 @@ export default function App() {
                             <span className="text-xs uppercase font-bold text-[#a0785a]">
                               {concept.isPrincipal ? 'Concepto Principal' : `Concepto Secundario ${idx}`}
                             </span>
-                            <select 
-                              value={concept.category}
-                              onChange={e => updateConcept(idx, { category: e.target.value as ConceptCategory, name: '' })}
-                              className="bg-transparent text-xs text-[#d4af37] border-none focus:ring-0 cursor-pointer"
-                            >
-                              <option value="Marciales">Marciales</option>
-                              <option value="Sociales">Sociales</option>
-                              <option value="Productivos">Productivos</option>
-                              <option value="Espirituales">Espirituales</option>
-                              <option value="Intelectuales">Intelectuales</option>
-                            </select>
+                            <div className="flex items-center gap-2">
+                              <label className="flex items-center gap-1 text-[10px] text-[#a0785a] cursor-pointer">
+                                <input 
+                                  type="radio" 
+                                  name="principalConcept" 
+                                  checked={concept.isPrincipal}
+                                  onChange={() => {
+                                    const newConcepts = senda.concepts.map((c, i) => ({ ...c, isPrincipal: i === idx }));
+                                    setSenda(prev => ({ ...prev, concepts: newConcepts }));
+                                  }}
+                                  className="text-[#d4af37] focus:ring-[#d4af37] w-3 h-3"
+                                /> Principal
+                              </label>
+                              <select 
+                                value={concept.category}
+                                onChange={e => updateConcept(idx, { category: e.target.value as ConceptCategory, name: '' })}
+                                className="bg-transparent text-xs text-[#d4af37] border-none focus:ring-0 cursor-pointer"
+                              >
+                                <option value="Marciales">Marciales</option>
+                                <option value="Sociales">Sociales</option>
+                                <option value="Productivos">Productivos</option>
+                                <option value="Espirituales">Espirituales</option>
+                                <option value="Intelectuales">Intelectuales</option>
+                              </select>
+                            </div>
                           </div>
                           
                           <select
